@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laravel CRUD — Présentation & TP Guidé</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+  /* ═══════════════════════════════════════════════
+     TOKENS
+  ═══════════════════════════════════════════════ */
+  :root {
+    --bg:      #060912;
+    --bg2:     #0b0f1e;
+    --sur:     rgba(255,255,255,0.04);
+    --sur2:    rgba(255,255,255,0.07);
+    --bdr:     rgba(255,255,255,0.08);
+    --bdr2:    rgba(124,92,252,0.40);
+
+    --v: #7c5cfc;  --b: #3b82f6;
+    --c: #22d3ee;  --p: #e040fb;
+    --g: #10b981;  --a: #f59e0b;
+    --r: #f87171;
+
+    --ga: linear-gradient(135deg,#7c5cfc,#3b82f6);
+    --gg: linear-gradient(135deg,#10b981,#22d3ee);
+
+    --txt:   #e8eaf6;
+    --muted: #6b7280;
+
+    --ff:  'Syne', sans-serif;
+    --fc:  'JetBrains Mono', monospace;
+    --ease: cubic-bezier(0.16,1,0.3,1);
+    --T: .65s var(--ease);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family: var(--ff);
+    background: var(--bg);
+    color: var(--txt);
+    overflow: hidden;
+    height: 100vh; width: 100vw;
+  }
+
+  /* ─── STARFIELD ─────────────────────────────── */
+  #stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+  /* ─── BLOBS ──────────────────────────────────── */
+  .blob { position:fixed; border-radius:50%; filter:blur(130px);
+    opacity:.13; pointer-events:none; z-index:0; transition:transform 9s ease; }
+  .b1 { width:700px;height:700px;background:var(--v);top:-250px;left:-250px; }
+  .b2 { width:500px;height:500px;background:var(--b);bottom:-200px;right:-200px; }
+  .b3 { width:400px;height:400px;background:var(--c);top:35%;left:55%; }
+
+  /* ─── ROOT ───────────────────────────────────── */
+  #root { position:relative;z-index:1;width:100vw;height:100vh;display:flex;flex-direction:column; }
+
+  /* ─── TOP NAV ────────────────────────────────── */
+  #topnav {
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    height:56px; display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;
+    background:rgba(6,9,18,.75);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--bdr);
+  }
+  .nav-logo {
+    display:flex;align-items:center;gap:10px;
+    font-size:15px;font-weight:700;color:#fff;letter-spacing:-.3px;
+  }
+  .nav-logo-dot {
+    width:28px;height:28px;border-radius:8px;
+    background:var(--ga);
+    display:flex;align-items:center;justify-content:center;font-size:14px;
+  }
+  .nav-tabs {
+    display:flex;gap:4px;
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--bdr);border-radius:12px;padding:4px;
+  }
+  .nav-tab {
+    padding:6px 18px;border-radius:9px;
+    font-size:13px;font-weight:600;cursor:pointer;
+    color:var(--muted);border:none;background:none;font-family:var(--ff);
+    transition:all .25s;
+  }
+  .nav-tab.active { background:var(--ga);color:#fff;box-shadow:0 2px 16px rgba(124,92,252,.35); }
+  .nav-info { font-family:var(--fc);font-size:12px;color:var(--muted); }
+  .nav-info b { color:var(--v); }
+
+  /* ─── PANELS ─────────────────────────────────── */
+  .panel {
+    position:absolute;inset:56px 0 0 0;overflow:hidden;
+    transition:opacity var(--T),transform var(--T);
+  }
+  .panel.hidden { display: none !important; }
+  .panel.visible { display: flex !important; }
+
+  /* ═══════════════════════════════════════════════
+     PRESENTATION
+  ═══════════════════════════════════════════════ */
+  #pres-panel { display:flex;flex-direction:column; }
+  #slides-vp  { flex:1;overflow:hidden;position:relative; }
+
+  .slide {
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:44px 60px;
+    opacity:0;transform:translateX(60px) scale(.97);
+    transition:opacity var(--T),transform var(--T);
+    pointer-events:none;
+  }
+  .slide.active  { opacity:1;transform:translateX(0) scale(1);pointer-events:auto; }
+  .slide.out-left{ opacity:0;transform:translateX(-60px) scale(.97); }
+
+  #pres-ctrl {
+    height:60px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 40px;
+    border-top:1px solid var(--bdr);
+    background:rgba(6,9,18,.5);backdrop-filter:blur(12px);
+  }
+  .pdots { display:flex;gap:8px;align-items:center; }
+  .pdot {
+    width:8px;height:8px;border-radius:50%;background:rgba(124,92,252,.3);
+    cursor:pointer;border:none;transition:all .25s;
+  }
+  .pdot.active { background:var(--v);width:24px;border-radius:4px;box-shadow:0 0 10px var(--v); }
+  .parr { display:flex;gap:10px; }
+  .abtn {
+    width:40px;height:40px;border-radius:12px;
+    background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);font-size:18px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;
+  }
+  .abtn:hover { background:var(--ga);border-color:transparent;box-shadow:0 0 20px rgba(124,92,252,.4); }
+  .abtn:disabled { opacity:.3;cursor:default; }
+  .abtn:disabled:hover { background:var(--sur2);border-color:var(--bdr);box-shadow:none; }
+  .keyhint { font-family:var(--fc);font-size:11px;color:var(--muted);display:flex;gap:8px; }
+  .key { padding:2px 7px;border-radius:5px;border:1px solid var(--bdr);color:var(--muted); }
+
+  /* ─── SLIDE PRIMITIVES ───────────────────────── */
+  .s-cover { flex-direction:column;text-align:center;max-width:900px;margin:auto; }
+  .eyebrow {
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--fc);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--c);
+    padding:6px 18px;border:1px solid rgba(34,211,238,.22);border-radius:100px;
+    background:rgba(34,211,238,.06);margin-bottom:28px;
+  }
+  .eyebrow::before { content:'';width:6px;height:6px;background:var(--c);border-radius:50%;box-shadow:0 0 8px var(--c);animation:blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  .big-title {
+    font-size:clamp(40px,7vw,88px);font-weight:800;line-height:1.0;letter-spacing:-3px;
+    background:linear-gradient(135deg,#fff 0%,var(--v) 50%,var(--c) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin-bottom:20px;
+  }
+  .sub-title { font-size:17px;color:var(--muted);line-height:1.7;max-width:540px;margin:0 auto 36px; }
+  .pill-row { display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:32px; }
+  .pill {
+    display:inline-flex;align-items:center;gap:7px;
+    padding:8px 16px;border-radius:100px;font-size:13px;font-weight:600;
+    border:1px solid var(--bdr);background:var(--sur);transition:all .25s;
+  }
+  .pill:hover { border-color:var(--bdr2);background:var(--sur2);transform:translateY(-2px); }
+  .sbtn {
+    display:inline-flex;align-items:center;gap:10px;
+    padding:13px 30px;border-radius:14px;background:var(--ga);color:#fff;
+    font-family:var(--ff);font-weight:700;font-size:15px;
+    cursor:pointer;border:none;box-shadow:0 4px 28px rgba(124,92,252,.4);transition:all .25s;
+  }
+  .sbtn:hover { transform:translateY(-3px);box-shadow:0 10px 36px rgba(124,92,252,.55);filter:brightness(1.1); }
+
+  .s-two { display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;max-width:1100px;width:100%;margin:auto; }
+  .s-two.wide { grid-template-columns:1.1fr .9fr; }
+  .slide-label { font-family:var(--fc);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px; }
+  .slide-h { font-size:clamp(24px,3.2vw,44px);font-weight:700;line-height:1.1;letter-spacing:-1px;color:#fff;margin-bottom:12px; }
+  .slide-p { font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:18px; }
+
+  .cklist { list-style:none;display:flex;flex-direction:column;gap:9px; }
+  .cklist li { display:flex;align-items:flex-start;gap:11px;font-size:14px;line-height:1.6; }
+  .ck-ico { width:22px;height:22px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:1px; }
+  .ico-v { background:rgba(124,92,252,.15);color:var(--v); }
+  .ico-c { background:rgba(34,211,238,.15);color:var(--c); }
+  .ico-g { background:rgba(16,185,129,.15);color:var(--g); }
+  .ico-a { background:rgba(245,158,11,.15);color:var(--a); }
+
+  .glass {
+    background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
+    backdrop-filter:blur(20px);padding:26px;transition:border-color .3s,box-shadow .3s;
+  }
+  .glass:hover { border-color:var(--bdr2);box-shadow:0 8px 40px rgba(124,92,252,.1); }
+  .glass-title { font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px; }
+
+  .mbadge { display:inline-block;padding:2px 8px;border-radius:6px;font-family:var(--fc);font-size:10px;font-weight:600;margin-bottom:4px; }
+  .GET  { background:rgba(16,185,129,.2);color:var(--g); }
+  .POST { background:rgba(59,130,246,.2);color:var(--b); }
+  .PUT  { background:rgba(245,158,11,.2);color:var(--a); }
+  .DEL  { background:rgba(239,68,68,.2);color:var(--r); }
+  .method-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+  .mitem { background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;padding:11px 13px;transition:all .25s; }
+  .mitem:hover { transform:scale(1.02); }
+  .mroute { font-family:var(--fc);font-size:11px;color:var(--v);margin-top:2px; }
+  .mdesc  { font-size:12px;color:var(--muted);line-height:1.4; }
+
+  .mvc-flow { display:flex;flex-direction:column;gap:5px;width:100%; }
+  .mvc-row  { display:flex;align-items:center;gap:8px; }
+  .mvc-rl   { font-family:var(--fc);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);white-space:nowrap;width:58px;text-align:right;flex-shrink:0; }
+  .mvc-box  { flex:1;padding:12px 16px;border-radius:11px;border:1px solid var(--bdr);text-align:center;font-weight:600;font-size:13px; }
+  .mvc-M { background:rgba(124,92,252,.08);border-color:rgba(124,92,252,.3);color:var(--v); }
+  .mvc-V { background:rgba(34,211,238,.08);border-color:rgba(34,211,238,.3);color:var(--c); }
+  .mvc-C { background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:var(--g); }
+  .mvc-R { background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:var(--b); }
+  .mvc-sub{ font-size:10px;opacity:.65;font-weight:400;font-family:var(--fc); }
+
+  .ftree { font-family:var(--fc);font-size:12.5px;background:rgba(0,0,0,.4);border-radius:14px;padding:18px 22px;border:1px solid var(--bdr);line-height:2.0; }
+  .ft-d { color:var(--c);font-weight:600; } .ft-f { color:var(--txt); }
+  .ft-hl{ color:var(--v);font-weight:600; } .ft-cm{ color:var(--muted); }
+  .i1{padding-left:20px;} .i2{padding-left:40px;} .i3{padding-left:60px;}
+
+  .s-transition { flex-direction:column;align-items:center;text-align:center;gap:26px;max-width:600px;margin:auto; }
+  .t-ring { width:96px;height:96px;border-radius:50%;background:var(--ga);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 0 0 16px rgba(124,92,252,.12),0 0 60px rgba(124,92,252,.3);animation:rpulse 3s ease-in-out infinite; }
+  @keyframes rpulse { 0%,100%{box-shadow:0 0 0 16px rgba(124,92,252,.12),0 0 60px rgba(124,92,252,.3)}50%{box-shadow:0 0 0 28px rgba(124,92,252,.06),0 0 80px rgba(124,92,252,.45)} }
+
+  code { font-family:var(--fc);background:rgba(124,92,252,.12);color:var(--v);padding:2px 7px;border-radius:5px;font-size:.88em; }
+
+
+  /* ═══════════════════════════════════════════════
+     TP GUIDÉ PANEL
+  ═══════════════════════════════════════════════ */
+  #tp-panel {
+    overflow-y:auto;
+    display:flex;flex-direction:column;align-items:center;
+    padding:48px 20px 120px;
+  }
+  #tp-panel::-webkit-scrollbar{width:5px;}
+  #tp-panel::-webkit-scrollbar-thumb{background:rgba(124,92,252,.3);border-radius:100px;}
+
+  /* ── TP HERO ── */
+  .tp-hero { text-align:center;margin-bottom:52px;opacity:0;transform:translateY(-20px);transition:all .7s var(--ease); }
+  .tp-hero.show { opacity:1;transform:translateY(0); }
+  .tp-eyebrow {
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--fc);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--c);
+    padding:5px 16px;border:1px solid rgba(34,211,238,.22);border-radius:100px;
+    background:rgba(34,211,238,.06);margin-bottom:20px;
+  }
+  .tp-eyebrow::before{content:'';width:6px;height:6px;background:var(--c);border-radius:50%;box-shadow:0 0 8px var(--c);animation:blink 2s ease-in-out infinite;}
+  .tp-title {
+    font-size:clamp(30px,5vw,58px);font-weight:800;letter-spacing:-2px;
+    background:linear-gradient(135deg,#fff 0%,var(--v) 50%,var(--c) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin-bottom:10px;
+  }
+  .tp-sub { font-size:14px;color:var(--muted);max-width:480px;margin:0 auto;line-height:1.7; }
+  .tp-sep { width:60px;height:3px;background:var(--ga);border-radius:100px;margin:12px auto 0;box-shadow:0 0 12px var(--v); }
+
+  /* ── PROGRESS RAIL ── */
+  .tp-rail {
+    display:flex;align-items:center;margin-bottom:48px;position:relative;
+    opacity:0;transition:opacity .7s .2s var(--ease);
+  }
+  .tp-rail.show { opacity:1; }
+  .tp-rail::before { content:'';position:absolute;top:50%;left:24px;right:24px;height:2px;background:var(--bdr);transform:translateY(-50%);z-index:0; }
+  .tp-prog { position:absolute;top:50%;left:24px;height:2px;background:var(--ga);transform:translateY(-50%);z-index:1;transition:width var(--T);box-shadow:0 0 12px var(--v); }
+  .tp-dot {
+    width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px;cursor:pointer;position:relative;z-index:2;flex-shrink:0;
+    transition:transform .3s,box-shadow .3s;
+    background:var(--bg2);border:2px solid var(--bdr);color:var(--muted);
+  }
+  .tp-dot.done   { background:var(--ga);border-color:transparent;color:#fff;box-shadow:0 0 18px rgba(124,92,252,.4); }
+  .tp-dot.active { background:var(--ga);border-color:transparent;color:#fff;transform:scale(1.2);box-shadow:0 0 0 6px rgba(124,92,252,.18),0 0 28px rgba(124,92,252,.55); }
+  .tp-dot:hover:not(.active){transform:scale(1.1);}
+  .tp-conn { width:64px;height:2px;background:transparent;position:relative;z-index:0; }
+
+  /* ── STEP CARD ── */
+  .tp-stage { width:100%;max-width:860px;perspective:1400px;position:relative; }
+  .tp-card {
+    width:100%;background:var(--sur);border:1px solid var(--bdr);border-radius:24px;
+    backdrop-filter:blur(24px);overflow:hidden;
+    position:absolute;top:0;left:0;
+    transform-origin:center center;
+    transition:opacity var(--T),transform var(--T),filter var(--T);
+    opacity:0;transform:translateY(60px) rotateX(8deg) scale(.96);
+    filter:blur(4px);pointer-events:none;z-index:1;
+  }
+  .tp-card.active  { opacity:1;transform:translateY(0) rotateX(0) scale(1);filter:blur(0);pointer-events:auto;position:relative;z-index:10; }
+  .tp-card.prev    { opacity:0;transform:translateY(-40px) rotateX(-6deg) scale(.97);filter:blur(3px);pointer-events:none;position:absolute;z-index:5; }
+  .tp-card.ghost   { opacity:.2;transform:translateY(80px) rotateX(10deg) scale(.93);filter:blur(6px);pointer-events:none;position:absolute;z-index:3; }
+
+  /* ── CARD HEADER ── */
+  .tp-ch {
+    padding:26px 30px 20px;display:flex;align-items:flex-start;gap:16px;
+    border-bottom:1px solid var(--bdr);position:relative;
+  }
+  .tp-ch::after { content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;background:var(--ga);opacity:.4; }
+  .tp-badge { width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+  .tp-ch-text { flex:1; }
+  .tp-step-lbl { font-family:var(--fc);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px; }
+  .tp-step-title { font-size:19px;font-weight:700;letter-spacing:-.4px;color:#fff; }
+  .tp-step-desc  { font-size:13px;color:var(--muted);line-height:1.6;margin-top:3px; }
+  .tp-tag {
+    display:inline-flex;align-items:center;gap:5px;
+    font-family:var(--fc);font-size:10px;padding:3px 9px;border-radius:100px;
+    background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.22);color:var(--v);margin-top:7px;
+  }
+
+  /* phase badge */
+  .phase-badge {
+    display:inline-flex;align-items:center;gap:6px;
+    padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;
+    font-family:var(--fc);letter-spacing:.5px;text-transform:uppercase;margin-left:auto;
+  }
+  .phase-enonce  { background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:var(--a); }
+  .phase-corr    { background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:var(--g); }
+
+  /* ── PHASE BODY: ÉNONCÉ ── */
+  .tp-enonce { padding:24px 30px;display:flex;flex-direction:column;gap:16px; }
+
+  .obj-title {
+    font-family:var(--fc);font-size:11px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--a);margin-bottom:10px;
+  }
+  .obj-list { list-style:none;display:flex;flex-direction:column;gap:8px; }
+  .obj-item {
+    display:flex;align-items:flex-start;gap:12px;
+    padding:12px 14px;border-radius:12px;
+    background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.12);
+    font-size:13px;line-height:1.6;cursor:pointer;transition:all .25s;
+  }
+  .obj-item:hover { background:rgba(245,158,11,.09);border-color:rgba(245,158,11,.25); }
+  .obj-item.done  { background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.2); }
+  .obj-item.done .obj-check { background:var(--g);color:#fff; }
+  .obj-check {
+    width:22px;height:22px;border-radius:7px;flex-shrink:0;
+    background:rgba(245,158,11,.12);border:1.5px solid rgba(245,158,11,.3);
+    display:flex;align-items:center;justify-content:center;font-size:11px;
+    transition:all .25s;margin-top:1px;
+  }
+  .obj-text { flex:1; }
+  .obj-text strong { color:#fff; }
+
+  /* context box */
+  .ctx-box {
+    background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18);
+    border-radius:12px;padding:14px 16px;display:flex;gap:10px;
+    font-size:13px;color:rgba(147,197,253,.9);line-height:1.6;
+  }
+  .ctx-box code { color:var(--b);background:rgba(59,130,246,.15); }
+
+  /* cmd block */
+  .tp-cmd {
+    background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-left:3px solid var(--c);
+    border-radius:12px;padding:13px 16px;
+    font-family:var(--fc);font-size:12px;color:var(--c);
+    display:flex;align-items:center;gap:10px;transition:all .3s;
+  }
+  .tp-cmd:hover { border-color:var(--c);box-shadow:0 0 18px rgba(34,211,238,.1); }
+  .dollar { opacity:.4;user-select:none; }
+  .tp-copy {
+    margin-left:auto;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.2);
+    color:var(--c);border-radius:7px;padding:3px 9px;
+    font-family:var(--fc);font-size:11px;cursor:pointer;transition:all .2s;flex-shrink:0;
+  }
+  .tp-copy:hover{background:rgba(34,211,238,.2);}
+  .tp-copy.ok{color:#4ade80;border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.1);}
+
+  /* hint accordion */
+  .hint-wrap { display:flex;flex-direction:column;gap:6px; }
+  .hint-head {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border-radius:11px;
+    background:rgba(124,92,252,.07);border:1px solid rgba(124,92,252,.18);
+    cursor:pointer;transition:all .25s;
+    font-size:13px;font-weight:600;color:var(--v);
+  }
+  .hint-head:hover { background:rgba(124,92,252,.12);border-color:rgba(124,92,252,.35); }
+  .hint-arrow { transition:transform .3s; }
+  .hint-head.open .hint-arrow { transform:rotate(90deg); }
+  .hint-body {
+    background:rgba(124,92,252,.05);border:1px solid rgba(124,92,252,.15);
+    border-radius:11px;padding:13px 16px;
+    font-size:13px;color:rgba(196,181,253,.9);line-height:1.7;
+    display:none;
+  }
+  .hint-body.open { display:block; }
+  .hint-body code { color:var(--v);background:rgba(124,92,252,.15); }
+  .hint-body ul { padding-left:18px;margin-top:6px; }
+  .hint-body li { margin-top:4px; }
+
+  /* reveal correction button */
+  .reveal-btn {
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;padding:14px;border-radius:14px;
+    background:var(--gg);color:#fff;
+    font-family:var(--ff);font-weight:700;font-size:14px;
+    cursor:pointer;border:none;
+    box-shadow:0 4px 24px rgba(16,185,129,.3);
+    transition:all .25s;position:relative;overflow:hidden;
+  }
+  .reveal-btn::before {
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+    transform:translateX(-100%);
+    animation:shimmer 2.5s ease-in-out infinite;
+  }
+  @keyframes shimmer{to{transform:translateX(100%)}}
+  .reveal-btn:hover { transform:translateY(-2px);box-shadow:0 8px 32px rgba(16,185,129,.45);filter:brightness(1.08); }
+
+  /* ── PHASE BODY: CORRECTION ── */
+  .tp-corr {
+    padding:24px 30px;display:flex;flex-direction:column;gap:14px;
+    border-top:1px solid rgba(16,185,129,.15);
+    animation:corrIn .5s var(--ease);
+  }
+  @keyframes corrIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .corr-banner {
+    display:flex;align-items:center;gap:12px;
+    background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);
+    border-radius:12px;padding:12px 16px;
+  }
+  .corr-banner-ico { font-size:20px; }
+  .corr-banner-txt { font-size:13px;color:rgba(52,211,153,.9);line-height:1.5; }
+  .corr-banner-txt strong { color:#fff; }
+
+  /* info grid */
+  .tp-igrid { display:grid;grid-template-columns:repeat(3,1fr);gap:9px; }
+  .tp-ii {
+    background:var(--sur2);border:1px solid var(--bdr);border-radius:11px;
+    padding:11px 13px;transition:all .25s;cursor:default;
+  }
+  .tp-ii:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(124,92,252,.12);border-color:rgba(124,92,252,.28);}
+  .tp-ii-i{font-size:17px;margin-bottom:5px;}
+  .tp-ii-l{font-family:var(--fc);font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+  .tp-ii-v{font-size:13px;font-weight:600;color:#fff;margin-top:1px;}
+
+  /* code block */
+  .code-wrap { border-radius:13px;overflow:hidden;border:1px solid var(--bdr);background:rgba(0,0,0,.45);transition:all .3s; }
+  .code-wrap:hover{border-color:rgba(124,92,252,.3);box-shadow:0 8px 36px rgba(124,92,252,.08);}
+  .code-bar {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:9px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--bdr);
+  }
+  .cdots{display:flex;gap:5px;}
+  .cdots span{width:10px;height:10px;border-radius:50%;}
+  .cdots span:nth-child(1){background:#ff5f57;}
+  .cdots span:nth-child(2){background:#febc2e;}
+  .cdots span:nth-child(3){background:#28c840;}
+  .cfilename{font-family:var(--fc);font-size:11px;color:var(--muted);}
+  .clang{font-family:var(--fc);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--v);opacity:.7;}
+  .cscroll{overflow-x:auto;max-height:280px;}
+  .cscroll::-webkit-scrollbar{width:4px;height:4px;}
+  .cscroll::-webkit-scrollbar-thumb{background:rgba(124,92,252,.3);border-radius:100px;}
+  .cscroll pre{margin:0!important;border-radius:0!important;background:transparent!important;padding:18px!important;font-family:var(--fc)!important;font-size:12.5px!important;line-height:1.7!important;}
+  .cscroll pre code{background:transparent!important;}
+
+  /* tip */
+  .tp-tip {
+    background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.16);
+    border-radius:11px;padding:12px 15px;
+    font-size:13px;color:rgba(34,211,238,.8);line-height:1.6;display:flex;gap:9px;
+  }
+  .tp-tip code{color:var(--c);background:rgba(34,211,238,.12);}
+
+  /* ── CARD FOOTER ── */
+  .tp-cf {
+    padding:16px 30px 22px;border-top:1px solid var(--bdr);
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .tp-counter{font-family:var(--fc);font-size:12px;color:var(--muted);}
+  .tp-counter b{color:var(--v);}
+  .tp-btns{display:flex;gap:8px;}
+  .tp-btn {
+    display:inline-flex;align-items:center;gap:7px;
+    padding:10px 20px;border-radius:11px;
+    font-family:var(--ff);font-weight:600;font-size:13px;
+    cursor:pointer;border:none;transition:all .25s;
+  }
+  .tp-ghost   { background:var(--sur2);border:1px solid var(--bdr);color:var(--muted); }
+  .tp-ghost:hover { border-color:var(--bdr2);color:var(--txt);box-shadow:0 4px 18px rgba(124,92,252,.1); }
+  .tp-primary { background:var(--ga);color:#fff;box-shadow:0 4px 20px rgba(124,92,252,.3); }
+  .tp-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,92,252,.45);filter:brightness(1.08);}
+  .tp-success { background:var(--gg);color:#fff;box-shadow:0 4px 20px rgba(16,185,129,.3); }
+  .tp-success:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(16,185,129,.4);}
+  .tp-btn:disabled { opacity:.4;cursor:default;transform:none!important;filter:none!important;box-shadow:none!important; }
+
+  /* next step gated */
+  .next-gate {
+    display:flex;align-items:center;gap:8px;
+    font-family:var(--fc);font-size:11px;color:var(--muted);
+    padding:8px 14px;border-radius:10px;
+    background:rgba(255,255,255,.03);border:1px solid var(--bdr);
+  }
+
+  /* ── COMPLETION ── */
+  .tp-done {
+    width:100%;max-width:860px;text-align:center;padding:56px 32px;
+    background:var(--sur);border:1px solid var(--bdr);border-radius:24px;
+    backdrop-filter:blur(24px);position:relative;overflow:hidden;
+    opacity:0;transform:scale(.95) translateY(40px);
+    transition:opacity var(--T),transform var(--T);
+    pointer-events:none;display:none;
+  }
+  .tp-done.show{display:block;opacity:1;transform:scale(1) translateY(0);pointer-events:auto;}
+  .tp-done::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(124,92,252,.14),transparent);}
+  .done-icon{font-size:56px;display:block;margin-bottom:14px;animation:bounce 2s ease-in-out infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .done-title{font-size:28px;font-weight:800;color:#fff;margin-bottom:8px;}
+  .done-sub{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:24px;}
+  .ach-list{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:24px;}
+  .ach{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:5px 12px;border-radius:100px;font-size:13px;}
+
+  /* ─── PARTICLES ─────────────────────────────── */
+  .particle{position:fixed;pointer-events:none;border-radius:50%;z-index:0;animation:pfloat linear infinite;}
+  @keyframes pfloat{0%{transform:translateY(0)scale(1);opacity:.6}50%{transform:translateY(-50px)scale(1.2);opacity:1}100%{transform:translateY(-110px)scale(.8);opacity:0}}
+
+  /* ─── TOKEN ANIMATION ────────────────────────── */
+  @keyframes tkin{to{opacity:1}}
+
+  /* ─── RESPONSIVE ─────────────────────────────── */
+  @media(max-width:680px){
+    .s-two{grid-template-columns:1fr;gap:20px;}
+    .slide{padding:28px 16px;}
+    #pres-ctrl{padding:0 16px;}
+    .tp-igrid{grid-template-columns:repeat(2,1fr);}
+    .tp-ch,.tp-enonce,.tp-corr,.tp-cf{padding-left:16px;padding-right:16px;}
+    .tp-cf{flex-direction:column;}
+  }
+  </style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div class="b1 blob"></div>
+<div class="b2 blob"></div>
+<div class="b3 blob"></div>
+
+<div id="root">
+
+  <!-- ── TOP NAV ── -->
+  <nav id="topnav">
+    <div class="nav-logo"><div class="nav-logo-dot">🐘</div>Laravel CRUD</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-pres" onclick="switchPanel('pres')">📊 Présentation</button>
+      <button class="nav-tab"        id="tab-tp"   onclick="switchPanel('tp')"  >⚡ TP Guidé</button>
+    </div>
+    <div class="nav-info" id="nav-info">Slide <b>1</b> / <b>7</b></div>
+  </nav>
+
+  <!-- ════════════ PRÉSENTATION ════════════ -->
+  <div class="panel visible" id="pres-panel">
+    <div id="slides-vp">
+
+      <!-- S0 COVER -->
+      <div class="slide active" id="slide-0">
+        <div class="s-cover">
+          <div class="eyebrow">Cours Développement Web</div>
+          <h1 class="big-title">Laravel<br/>CRUD API</h1>
+          <p class="sub-title">Construire une API REST complète — migrations, modèles, contrôleurs, routes et vues Blade.</p>
+          <div class="pill-row">
+            <span class="pill">🐘 PHP 8.2</span><span class="pill">🚀 Laravel 11</span>
+            <span class="pill">🗄️ MySQL</span><span class="pill">🎨 Blade</span><span class="pill">📡 REST</span>
+          </div>
+          <button class="sbtn" onclick="goSlide(1)">Commencer la présentation →</button>
+        </div>
+      </div>
+
+      <!-- S1 INTRO -->
+      <div class="slide" id="slide-1">
+        <div class="s-two">
+          <div>
+            <div class="slide-label" style="color:var(--c)">Introduction</div>
+            <h2 class="slide-h">Qu'est-ce que Laravel ?</h2>
+            <p class="slide-p">Laravel est un framework PHP open-source qui fournit une architecture élégante pour construire des applications web et des APIs REST robustes.</p>
+            <ul class="cklist">
+              <li><span class="ck-ico ico-v">✦</span>Architecture <strong>MVC</strong> — séparation claire des responsabilités</li>
+              <li><span class="ck-ico ico-c">⚡</span><strong>Eloquent ORM</strong> — interactions fluides avec la BD</li>
+              <li><span class="ck-ico ico-g">🛣️</span><strong>Routing expressif</strong> — définir des routes en une ligne</li>
+              <li><span class="ck-ico ico-a">🎨</span><strong>Blade</strong> — moteur de templates puissant</li>
+              <li><span class="ck-ico ico-v">🔧</span><strong>Artisan CLI</strong> — génération de code automatique</li>
+            </ul>
+          </div>
+          <div class="glass">
+            <div class="glass-title" style="color:var(--c)">Installation rapide</div>
+            <div class="tp-cmd" style="margin-bottom:10px"><span class="dollar">$</span><span style="font-size:11.5px">composer create-project laravel/laravel app</span></div>
+            <div class="tp-cmd" style="margin-bottom:10px"><span class="dollar">$</span><span>cd app &amp;&amp; php artisan serve</span></div>
+            <div class="tp-tip" style="margin-top:12px"><span>💡</span><span>Laravel démarre sur <code>http://localhost:8000</code> par défaut.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S2 MVC -->
+      <div class="slide" id="slide-2">
+        <div class="s-two wide">
+          <div>
+            <div class="slide-label" style="color:var(--v)">Architecture</div>
+            <h2 class="slide-h">Le Pattern MVC dans Laravel</h2>
+            <p class="slide-p">Laravel suit le pattern <strong>Model-View-Controller</strong> pour organiser le code de façon claire et maintenable.</p>
+            <ul class="cklist">
+              <li><span class="ck-ico ico-v">M</span><strong>Model</strong> — représente les données &amp; logique métier (Eloquent)</li>
+              <li><span class="ck-ico ico-c">V</span><strong>View</strong> — présentation HTML via Blade</li>
+              <li><span class="ck-ico ico-g">C</span><strong>Controller</strong> — orchestre Model ↔ View</li>
+            </ul>
+          </div>
+          <div class="glass">
+            <div class="glass-title" style="color:var(--v)">Flux d'une requête MVC</div>
+            <div class="mvc-flow">
+              <div class="mvc-row"><div class="mvc-rl">Client</div><div class="mvc-box mvc-R">🌐 Requête HTTP<div class="mvc-sub">GET /products</div></div></div>
+              <div class="mvc-row"><div class="mvc-rl"></div><div style="color:var(--muted);font-size:18px;text-align:center;flex:1">↓</div></div>
+              <div class="mvc-row"><div class="mvc-rl">Router</div><div class="mvc-box mvc-R" style="background:rgba(59,130,246,.06)">🛣️ routes/web.php<div class="mvc-sub">Route::resource</div></div></div>
+              <div class="mvc-row"><div class="mvc-rl"></div><div style="color:var(--muted);font-size:18px;text-align:center;flex:1">↓</div></div>
+              <div class="mvc-row"><div class="mvc-rl">Control.</div><div class="mvc-box mvc-C">⚡ ProductController<div class="mvc-sub">index() / store()</div></div></div>
+              <div class="mvc-row"><div class="mvc-rl"></div><div style="display:flex;gap:8px;flex:1"><div style="color:var(--muted);font-size:16px;flex:1;text-align:center">↙</div><div style="color:var(--muted);font-size:16px;flex:1;text-align:center">↘</div></div></div>
+              <div class="mvc-row" style="gap:8px"><div class="mvc-rl"></div><div class="mvc-box mvc-M" style="flex:1">🏗️ Model<div class="mvc-sub">Eloquent</div></div><div class="mvc-box mvc-V" style="flex:1">🎨 View<div class="mvc-sub">Blade</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S3 REST -->
+      <div class="slide" id="slide-3">
+        <div class="s-two">
+          <div>
+            <div class="slide-label" style="color:var(--g)">REST API</div>
+            <h2 class="slide-h">Les Verbes HTTP &amp; CRUD</h2>
+            <p class="slide-p">Une API REST utilise les méthodes HTTP pour définir les opérations CRUD sur les ressources.</p>
+            <ul class="cklist">
+              <li><span class="ck-ico ico-g">R</span><strong>Read</strong> — récupérer avec <code>GET</code></li>
+              <li><span class="ck-ico ico-c">C</span><strong>Create</strong> — créer avec <code>POST</code></li>
+              <li><span class="ck-ico ico-a">U</span><strong>Update</strong> — modifier avec <code>PUT</code> / <code>PATCH</code></li>
+              <li><span class="ck-ico" style="background:rgba(239,68,68,.15);color:var(--r)">D</span><strong>Delete</strong> — supprimer avec <code>DELETE</code></li>
+            </ul>
+          </div>
+          <div class="glass">
+            <div class="glass-title" style="color:var(--g)">Routes générées par <code>Route::resource</code></div>
+            <div class="method-grid">
+              <div class="mitem"><div class="mbadge GET">GET</div><div class="mroute">/products</div><div class="mdesc">Liste tous les produits</div></div>
+              <div class="mitem"><div class="mbadge POST">POST</div><div class="mroute">/products</div><div class="mdesc">Crée un produit</div></div>
+              <div class="mitem"><div class="mbadge GET">GET</div><div class="mroute">/products/{id}</div><div class="mdesc">Affiche un produit</div></div>
+              <div class="mitem"><div class="mbadge PUT">PUT</div><div class="mroute">/products/{id}</div><div class="mdesc">Met à jour</div></div>
+              <div class="mitem"><div class="mbadge DEL">DEL</div><div class="mroute">/products/{id}</div><div class="mdesc">Supprime</div></div>
+              <div class="mitem"><div class="mbadge GET">GET</div><div class="mroute">/products/create</div><div class="mdesc">Formulaire</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S4 STRUCTURE -->
+      <div class="slide" id="slide-4">
+        <div class="s-two">
+          <div>
+            <div class="slide-label" style="color:var(--a)">Structure</div>
+            <h2 class="slide-h">Organisation d'un projet Laravel</h2>
+            <p class="slide-p">Chaque fichier a sa place définie par convention dans le framework.</p>
+            <ul class="cklist" style="margin-top:6px">
+              <li><span class="ck-ico ico-v">📁</span><code>app/Models</code> — classes Eloquent</li>
+              <li><span class="ck-ico ico-c">📁</span><code>app/Http/Controllers</code> — contrôleurs</li>
+              <li><span class="ck-ico ico-g">📁</span><code>database/migrations</code> — schéma BD</li>
+              <li><span class="ck-ico ico-a">📁</span><code>resources/views</code> — templates Blade</li>
+              <li><span class="ck-ico ico-v">📄</span><code>routes/web.php</code> — routes HTTP</li>
+            </ul>
+          </div>
+          <div class="ftree">
+<span class="ft-d">laravel-app/</span>
+<div class="i1"><span class="ft-d">app/</span></div>
+<div class="i2"><span class="ft-d">Http/Controllers/</span></div>
+<div class="i3"><span class="ft-hl">ProductController.php</span> <span class="ft-cm">✦</span></div>
+<div class="i2"><span class="ft-d">Models/</span></div>
+<div class="i3"><span class="ft-hl">Product.php</span> <span class="ft-cm">✦</span></div>
+<div class="i1"><span class="ft-d">database/migrations/</span></div>
+<div class="i2"><span class="ft-hl">..._create_products_table.php</span> <span class="ft-cm">✦</span></div>
+<div class="i1"><span class="ft-d">resources/views/products/</span></div>
+<div class="i2"><span class="ft-hl">index.blade.php</span> <span class="ft-cm">✦</span></div>
+<div class="i2"><span class="ft-hl">create.blade.php</span> <span class="ft-cm">✦</span></div>
+<div class="i1"><span class="ft-hl">routes/web.php</span> <span class="ft-cm">← Route::resource</span></div>
+<div class="i1"><span class="ft-f">.env</span> <span class="ft-cm">← config BD</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S5 ELOQUENT -->
+      <div class="slide" id="slide-5">
+        <div class="s-two">
+          <div>
+            <div class="slide-label" style="color:var(--p)">Eloquent ORM</div>
+            <h2 class="slide-h">Interagir avec la Base de Données</h2>
+            <p class="slide-p">Eloquent est l'ORM intégré de Laravel. Il permet d'interagir avec la BD à travers des classes PHP fluides et expressives.</p>
+            <ul class="cklist">
+              <li><span class="ck-ico ico-v">🔍</span><code>Product::all()</code> — récupérer tous</li>
+              <li><span class="ck-ico ico-c">➕</span><code>Product::create($data)</code> — créer</li>
+              <li><span class="ck-ico ico-a">✏️</span><code>$p->update($data)</code> — mettre à jour</li>
+              <li><span class="ck-ico" style="background:rgba(239,68,68,.15);color:var(--r)">🗑️</span><code>$p->delete()</code> — supprimer</li>
+              <li><span class="ck-ico ico-g">🔎</span><code>Product::find($id)</code> — par ID</li>
+            </ul>
+          </div>
+          <div class="glass">
+            <div class="glass-title" style="color:var(--p)">Requêtes Eloquent fluides</div>
+            <div class="code-wrap">
+              <div class="code-bar"><div class="cdots"><span></span><span></span><span></span></div><span class="cfilename">ProductController.php</span><span class="clang">PHP</span></div>
+              <div class="cscroll"><pre><code class="language-php">// Récupérer avec pagination
+$products = Product::latest()->paginate(10);
+
+// Filtrer et trier
+$cheap = Product::where('price', '<', 50)
+                ->orderBy('name')->get();
+
+// Créer depuis un formulaire
+Product::create($request->validated());</code></pre></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S6 TRANSITION -->
+      <div class="slide" id="slide-6">
+        <div class="s-transition">
+          <div class="t-ring">⚡</div>
+          <div>
+            <div class="slide-label" style="color:var(--c);text-align:center;font-family:var(--fc);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Maintenant</div>
+            <h2 class="slide-h" style="text-align:center">Place au TP Guidé !</h2>
+          </div>
+          <p class="slide-p" style="text-align:center">Vous avez assimilé les concepts. Construisez une vraie API REST — étape par étape, avec énoncé, indices et correction.</p>
+          <div class="pill-row" style="justify-content:center">
+            <span class="pill">🗄️ Migration</span><span class="pill">🏗️ Model</span>
+            <span class="pill">⚡ Controller</span><span class="pill">🛣️ Routes</span><span class="pill">🎨 Blade</span>
+          </div>
+          <button class="sbtn" onclick="switchPanel('tp')">Démarrer le TP →</button>
+        </div>
+      </div>
+
+    </div><!-- /slides-vp -->
+
+    <div id="pres-ctrl">
+      <div class="keyhint"><span class="key">←</span><span class="key">→</span> naviguer<span style="margin-left:8px" class="key">Espace</span> suivant</div>
+      <div class="pdots" id="pdots"></div>
+      <div class="parr">
+        <button class="abtn" id="ap" onclick="goSlide(curSlide-1)">←</button>
+        <button class="abtn" id="an" onclick="goSlide(curSlide+1)">→</button>
+      </div>
+    </div>
+  </div><!-- /pres-panel -->
+
+
+  <!-- ════════════ TP GUIDÉ ════════════ -->
+  <div class="panel hidden" id="tp-panel">
+
+    <div class="tp-hero" id="tp-hero">
+      <div class="tp-eyebrow">Laravel — TP Pratique</div>
+      <h1 class="tp-title">Mini TP guidé : CRUD Produits</h1>
+      <p class="tp-sub">Exercice court en 3 étapes : lisez l'énoncé, codez, puis révélez la correction.</p>
+      <div class="tp-sep"></div>
+    </div>
+
+    <div class="tp-rail" id="tp-rail">
+      <div class="tp-prog" id="tp-prog" style="width:0%"></div>
+    </div>
+
+    <div class="tp-stage" id="tp-stage"></div>
+
+    <div class="tp-done" id="tp-done">
+      <span class="done-icon">🏆</span>
+      <h2 class="done-title">Mini TP terminé avec succès !</h2>
+      <p class="done-sub">Vous avez complété le TP guidé basé sur la présentation.<br/>Migration, modèle et contrôleur CRUD : l'essentiel est en place.</p>
+      <div class="ach-list" id="ach-list"></div>
+      <button class="tp-btn tp-primary" onclick="restartTP()">↩ Recommencer le TP</button>
+    </div>
+
+  </div><!-- /tp-panel -->
+
+</div><!-- /root -->
+
+<script>
+/* ══════════════════════════════════════════════
+   STARFIELD
+══════════════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');
+  let st=[];
+  function rs(){c.width=innerWidth;c.height=innerHeight;}
+  rs();window.addEventListener('resize',rs);
+  for(let i=0;i<190;i++) st.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.4,o:Math.random()*.6+.1});
+  (function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    st.forEach(s=>{
+      s.o+=(Math.random()-.5)*.015;s.o=Math.max(.05,Math.min(.85,s.o));
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.o})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })();
+})();
+
+/* ══════════════════════════════════════════════
+   PANEL SWITCH
+══════════════════════════════════════════════ */
+let active='pres';
+function switchPanel(name){
+  if(active===name)return;
+  active=name;
+  document.getElementById('pres-panel').className='panel '+(name==='pres'?'visible':'hidden');
+  document.getElementById('tp-panel').className  ='panel '+(name==='tp'  ?'visible':'hidden');
+  document.getElementById('tab-pres').className  ='nav-tab'+(name==='pres'?' active':'');
+  document.getElementById('tab-tp').className    ='nav-tab'+(name==='tp'  ?' active':'');
+  if(name==='tp'){
+    ensureTPBuilt();
+    updateTPNav();
+    document.getElementById('tp-hero').classList.add('show');
+    document.getElementById('tp-rail').classList.add('show');
+  } else { updatePresNav(); }
+}
+
+/* ══════════════════════════════════════════════
+   PRESENTATION
+══════════════════════════════════════════════ */
+const TOTAL=7;
+let curSlide=0;
+function buildDots(){
+  const c=document.getElementById('pdots');c.innerHTML='';
+  for(let i=0;i<TOTAL;i++){
+    const b=document.createElement('button');b.className='pdot'+(i===0?' active':'');
+    b.onclick=()=>goSlide(i);c.appendChild(b);
+  }
+}
+function goSlide(idx){
+  if(idx<0||idx>=TOTAL)return;
+  document.getElementById('slide-'+curSlide).classList.remove('active');
+  document.getElementById('slide-'+curSlide).classList.add('out-left');
+  setTimeout(()=>document.getElementById('slide-'+(idx<curSlide?idx+1:idx-1))?.classList.remove('out-left'),700);
+  curSlide=idx;
+  document.getElementById('slide-'+idx).classList.add('active');
+  document.querySelectorAll('.pdot').forEach((d,i)=>d.className='pdot'+(i===idx?' active':''));
+  document.getElementById('ap').disabled=idx===0;
+  document.getElementById('an').disabled=idx===TOTAL-1;
+  updatePresNav();
+  spawnP('#7c5cfc');
+  if (window.Prism && typeof Prism.highlightAll === 'function') {
+    Prism.highlightAll();
+  }
+}
+function updatePresNav(){
+  document.getElementById('nav-info').innerHTML='Slide <b>'+(curSlide+1)+'</b> / <b>'+TOTAL+'</b>';
+}
+window.addEventListener('keydown',e=>{
+  if(active!=='pres')return;
+  if(e.key==='ArrowRight'||e.key===' ')goSlide(curSlide+1);
+  if(e.key==='ArrowLeft')goSlide(curSlide-1);
+});
+document.addEventListener('mousemove',e=>{
+  const mx=(e.clientX/innerWidth-.5)*50,my=(e.clientY/innerHeight-.5)*50;
+  document.querySelector('.b1').style.transform=`translate(${mx*.3}px,${my*.3}px)`;
+  document.querySelector('.b2').style.transform=`translate(${-mx*.2}px,${-my*.2}px)`;
+  document.querySelector('.b3').style.transform=`translate(${mx*.5}px,${my*.5}px)`;
+});
+
+/* ══════════════════════════════════════════════
+   TP DATA
+══════════════════════════════════════════════ */
+const TP_ALL=[
+  /* ── ÉTAPE 1 ── */
+  {
+    id:1, icon:'🗄️', label:'Étape 1', title:'La Migration',
+    desc:'Créer la structure de la table products en base de données',
+    accent:'var(--c)', grad:'linear-gradient(135deg,#22d3ee,#3b82f6)',
+    tag:'database/migrations', filename:'xxxx_create_products_table.php', lang:'PHP',
+    /* ÉNONCÉ */
+    context:`Dans Laravel, une <strong>migration</strong> est un fichier PHP qui décrit la structure d'une table. C'est comme un "plan d'architecte" pour votre base de données. Vous devez créer la table <code>products</code> qui stockera nos produits.`,
+    command:'php artisan make:migration create_products_table',
+    objectives:[
+      {text:'Générer le fichier de migration avec <strong>Artisan</strong>'},
+      {text:'Ajouter un champ <code>name</code> de type <strong>string</strong>'},
+      {text:'Ajouter un champ <code>description</code> de type <strong>text</strong> (nullable)'},
+      {text:'Ajouter un champ <code>price</code> de type <strong>decimal</strong> avec 2 décimales'},
+      {text:'Exécuter <code>php artisan migrate</code> pour appliquer'},
+    ],
+    hints:[
+      {title:'💡 Où écrire le code ?', body:'Le fichier généré se trouve dans <code>database/migrations/</code>. Ouvrez-le et complétez la méthode <code>up()</code> à l\'intérieur du callback <code>Schema::create()</code>.'},
+      {title:'💡 Types de colonnes Blade', body:'Utilisez :<ul><li><code>$table->string(\'name\')</code> pour un VARCHAR</li><li><code>$table->text(\'description\')->nullable()</code> pour un TEXT optionnel</li><li><code>$table->decimal(\'price\', 10, 2)</code> pour un nombre décimal</li></ul>'},
+      {title:'💡 L\'id et les timestamps', body:'Pas besoin de les ajouter manuellement ! <code>$table->id()</code> crée la clé primaire auto-incrémentée et <code>$table->timestamps()</code> crée <code>created_at</code> et <code>updated_at</code> — ils sont déjà dans le fichier généré.'},
+    ],
+    /* CORRECTION */
+    corrBanner:'Voici la migration complète. Les champs <strong>id</strong> et <strong>timestamps</strong> sont toujours présents par défaut.',
+    info:[{i:'📋',l:'Table',v:'products'},{i:'🔑',l:'Clé',v:'id auto'},{i:'📅',l:'Timestamps',v:'créés auto'}],
+    tip:'Après avoir complété le fichier, lancez <code>php artisan migrate</code> dans votre terminal pour créer physiquement la table.',
+    code:`<?php
+
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();                            // Clé primaire auto
+            $table->string('name');                  // VARCHAR(255)
+            $table->text('description')->nullable(); // TEXT optionnel
+            $table->decimal('price', 10, 2);         // Ex: 9999999.99
+            $table->timestamps();                    // created_at + updated_at
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('products'); // Rollback
+    }
+};`,
+  },
+
+  /* ── ÉTAPE 2 ── */
+  {
+    id:2, icon:'🏗️', label:'Étape 2', title:'Le Modèle Eloquent',
+    desc:'Créer la classe Product et déclarer les champs autorisés',
+    accent:'var(--v)', grad:'linear-gradient(135deg,#7c5cfc,#3b82f6)',
+    tag:'app/Models/Product.php', filename:'app/Models/Product.php', lang:'PHP',
+    context:`Le <strong>modèle</strong> est la représentation PHP de votre table en base de données. Il agit comme un pont entre votre code et la BD. La propriété <code>$fillable</code> est une liste blanche qui protège contre l'<strong>assignation massive</strong> (Mass Assignment Attack).`,
+    command:'php artisan make:model Product',
+    objectives:[
+      {text:'Générer le modèle avec <strong>Artisan</strong>'},
+      {text:'Déclarer la propriété <code>$fillable</code> avec les 3 champs autorisés'},
+      {text:'Ajouter un cast pour que <code>price</code> soit traité comme un <strong>décimal</strong>'},
+    ],
+    hints:[
+      {title:'💡 C\'est quoi $fillable ?', body:'<code>$fillable</code> définit quels champs peuvent être remplis en masse via <code>Product::create($data)</code>. Sans cette liste, Laravel lèvera une <code>MassAssignmentException</code> par sécurité. Ne jamais mettre <code>id</code> dedans !'},
+      {title:'💡 C\'est quoi $casts ?', body:'<code>$casts</code> convertit automatiquement les valeurs retournées par Eloquent. En ajoutant <code>\'price\' => \'decimal:2\'</code>, le prix sera toujours retourné avec 2 décimales (ex: "19.99" et non "19.9900").'},
+      {title:'💡 Le trait HasFactory', body:'Le trait <code>HasFactory</code> est inclus automatiquement. Il permet de créer des données de test avec <code>Product::factory()->create()</code>. Ne le supprimez pas.'},
+    ],
+    corrBanner:'Le modèle est minimal mais complet. Le nom de la table <strong>products</strong> est déduit automatiquement du nom de la classe.',
+    info:[{i:'🛡️',l:'Sécurité',v:'$fillable'},{i:'🔗',l:'Table',v:'products'},{i:'✅',l:'Timestamps',v:'actifs'}],
+    tip:'Laravel devine automatiquement le nom de la table à partir du modèle : <code>Product</code> → table <code>products</code> (pluriel, snake_case).',
+    code:`<?php
+
+namespace App\\Models;
+
+use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;
+use Illuminate\\Database\\Eloquent\\Model;
+
+class Product extends Model
+{
+    use HasFactory;
+
+    /**
+     * Champs autorisés en assignation massive.
+     * Protège contre les Mass Assignment Attacks.
+     */
+    protected $fillable = [
+        'name',
+        'description',
+        'price',
+    ];
+
+    /**
+     * Conversions de types automatiques.
+     * price sera toujours retourné avec 2 décimales.
+     */
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+}`,
+  },
+
+  /* ── ÉTAPE 3 ── */
+  {
+    id:3, icon:'⚡', label:'Étape 3', title:'Le Contrôleur',
+    desc:'Implémenter index(), create(), store() et destroy()',
+    accent:'#f59e0b', grad:'linear-gradient(135deg,#f59e0b,#ef4444)',
+    tag:'app/Http/Controllers', filename:'app/Http/Controllers/ProductController.php', lang:'PHP',
+    context:`Le <strong>contrôleur</strong> est le chef d'orchestre de votre application. Il reçoit les requêtes HTTP, interroge le modèle, et renvoie la bonne vue. Vous allez implémenter 4 méthodes : afficher la liste, afficher le formulaire, enregistrer un produit, et le supprimer.`,
+    command:'php artisan make:controller ProductController --resource',
+    objectives:[
+      {text:'Générer le contrôleur resource avec <strong>Artisan</strong>'},
+      {text:'<code>index()</code> — récupérer tous les produits paginés et retourner la vue'},
+      {text:'<code>create()</code> — retourner simplement la vue du formulaire de création'},
+      {text:'<code>store()</code> — valider la requête, créer le produit, rediriger avec message'},
+      {text:'<code>destroy()</code> — supprimer le produit et rediriger avec message'},
+    ],
+    hints:[
+      {title:'💡 La validation', body:'Utilisez <code>$request->validate([...])</code> pour valider les données. Si la validation échoue, Laravel redirige automatiquement vers le formulaire avec les erreurs. Règles utiles : <code>required</code>, <code>string</code>, <code>max:255</code>, <code>numeric</code>, <code>min:0</code>, <code>nullable</code>.'},
+      {title:'💡 Route Model Binding', body:'Dans <code>destroy(Product $product)</code>, Laravel injecte automatiquement l\'objet Product correspondant à l\'ID dans l\'URL. Pas besoin de faire <code>Product::find($id)</code> manuellement !'},
+      {title:'💡 Redirect avec message flash', body:'Après une action, redirigez avec un message :<br><code>return redirect()->route(\'products.index\')<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;->with(\'success\', \'Créé !\');</code><br>Ce message sera accessible via <code>session(\'success\')</code> dans la vue.'},
+    ],
+    corrBanner:'Notez l\'utilisation de la <strong>validation intégrée</strong> et du <strong>Route Model Binding</strong> — deux fonctionnalités clés de Laravel.',
+    info:[{i:'📋',l:'index()',v:'GET liste'},{i:'📤',l:'store()',v:'POST créer'},{i:'🗑️',l:'destroy()',v:'DELETE suppr.'}],
+    tip:'Le flag <code>--resource</code> génère les 7 méthodes CRUD vides. Vous n\'avez qu\'à les remplir selon vos besoins.',
+    code:`<?php
+
+namespace App\\Http\\Controllers;
+
+use App\\Models\\Product;
+use Illuminate\\Http\\Request;
+
+class ProductController extends Controller
+{
+    /**
+     * GET /products — Liste paginée des produits
+     */
+    public function index()
+    {
+        $products = Product::latest()->paginate(10);
+        return view('products.index', compact('products'));
+    }
+
+    /**
+     * GET /products/create — Formulaire de création
+     */
+    public function create()
+    {
+        return view('products.create');
+    }
+
+    /**
+     * POST /products — Valider et enregistrer un produit
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price'       => 'required|numeric|min:0',
+        ]);
+
+        Product::create($validated);
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', '✅ Produit créé avec succès !');
+    }
+
+    /**
+     * DELETE /products/{product} — Supprimer un produit
+     * Laravel injecte automatiquement le modèle (Route Model Binding)
+     */
+    public function destroy(Product $product)
+    {
+        $product->delete();
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', '🗑️ Produit supprimé !');
+    }
+}`,
+  },
+
+  /* ── ÉTAPE 4 ── */
+  {
+    id:4, icon:'🛣️', label:'Étape 4', title:'Les Routes',
+    desc:'Déclarer les routes resource et vérifier les URLs générées',
+    accent:'#10b981', grad:'linear-gradient(135deg,#10b981,#22d3ee)',
+    tag:'routes/web.php', filename:'routes/web.php', lang:'PHP',
+    context:`Le fichier <code>routes/web.php</code> est le <strong>point d'entrée</strong> de toutes vos requêtes HTTP. En Laravel, une seule ligne <code>Route::resource</code> génère automatiquement les <strong>7 routes CRUD</strong> standards pour une ressource.`,
+    command:null,
+    objectives:[
+      {text:'Ouvrir <code>routes/web.php</code> et importer le contrôleur'},
+      {text:'Ajouter une redirection de <code>/</code> vers <code>products.index</code>'},
+      {text:'Déclarer <code>Route::resource(\'products\', ProductController::class)</code>'},
+      {text:'Vérifier avec <code>php artisan route:list</code> que les 7 routes existent'},
+    ],
+    hints:[
+      {title:'💡 Import du contrôleur', body:'En haut du fichier, ajoutez : <code>use App\\Http\\Controllers\\ProductController;</code>. Sans cet import, Laravel ne trouvera pas la classe.'},
+      {title:'💡 php artisan route:list', body:'Lancez <code>php artisan route:list</code> dans le terminal pour voir toutes les routes enregistrées. Vous devriez voir 7 lignes commençant par <code>products.</code>.'},
+      {title:'💡 Limiter les routes', body:'Si vous ne voulez pas toutes les 7 routes, utilisez <code>->only([\'index\',\'store\',\'destroy\'])</code> ou <code>->except([\'show\',\'edit\',\'update\'])</code>.'},
+    ],
+    corrBanner:'Un seul appel <code>Route::resource</code> remplace 7 déclarations de routes individuelles. Très puissant !',
+    info:[{i:'🌐',l:'7 routes',v:'générées'},{i:'🏷️',l:'Nommées',v:'products.*'},{i:'🔗',l:'Controller',v:'lié auto'}],
+    tip:'Utilisez <code>route(\'products.index\')</code> dans vos vues pour générer l\'URL. Évitez les URLs en dur — si votre route change, tout se met à jour automatiquement.',
+    code:`<?php
+
+use App\\Http\\Controllers\\ProductController;
+use Illuminate\\Support\\Facades\\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Rediriger la racine vers la liste des produits
+Route::get('/', function () {
+    return redirect()->route('products.index');
+});
+
+// Une seule ligne génère 7 routes CRUD :
+//
+//  GET    /products              → index()     products.index
+//  GET    /products/create       → create()    products.create
+//  POST   /products              → store()     products.store
+//  GET    /products/{product}    → show()      products.show
+//  GET    /products/{product}/edit → edit()    products.edit
+//  PUT    /products/{product}    → update()    products.update
+//  DELETE /products/{product}    → destroy()   products.destroy
+//
+Route::resource('products', ProductController::class);`,
+  },
+
+  /* ── ÉTAPE 5 ── */
+  {
+    id:5, icon:'🎨', label:'Étape 5', title:'Les Vues Blade',
+    desc:'Créer index.blade.php (liste + suppression) et create.blade.php (formulaire)',
+    accent:'#e040fb', grad:'linear-gradient(135deg,#e040fb,#7c5cfc)',
+    tag:'resources/views/products/', filename:'resources/views/products/index.blade.php', lang:'HTML',
+    context:`<strong>Blade</strong> est le moteur de templates de Laravel. Il permet d'écrire du HTML dynamique avec des directives spéciales (<code>@foreach</code>, <code>@if</code>, <code>{{ }}</code>). Vous allez créer deux vues : une pour lister les produits et une pour le formulaire de création.`,
+    command:null,
+    objectives:[
+      {text:'Créer le dossier <code>resources/views/products/</code>'},
+      {text:'<code>index.blade.php</code> — afficher tous les produits dans un tableau'},
+      {text:'<code>index.blade.php</code> — afficher le message flash (<code>session(\'success\')</code>)'},
+      {text:'<code>index.blade.php</code> — ajouter un bouton "Supprimer" avec <code>@method(\'DELETE\')</code>'},
+      {text:'<code>create.blade.php</code> — créer un formulaire avec les 3 champs (<code>@csrf</code> obligatoire)'},
+    ],
+    hints:[
+      {title:'💡 Pourquoi @csrf ?', body:'Laravel vérifie automatiquement un token CSRF pour chaque requête POST/PUT/DELETE. Sans <code>@csrf</code> dans le formulaire, vous obtiendrez une erreur 419. Ce token protège contre les attaques CSRF (Cross-Site Request Forgery).'},
+      {title:'💡 Simuler DELETE en HTML', body:'Les formulaires HTML ne supportent que GET et POST. Pour simuler DELETE, ajoutez <code>@method(\'DELETE\')</code> à l\'intérieur du formulaire. Laravel intercepte ce champ caché et interprète la requête comme DELETE.'},
+      {title:'💡 Afficher les erreurs de validation', body:'Après un <code>validate()</code> raté, les erreurs sont disponibles dans <code>$errors</code> :<br><code>@error(\'name\')<br>&nbsp;&nbsp;&lt;p&gt;{{ $message }}&lt;/p&gt;<br>@enderror</code>'},
+    ],
+    corrBanner:'Les directives Blade <code>@forelse</code>, <code>@csrf</code> et <code>@method</code> sont les éléments clés à retenir ici.',
+    info:[{i:'📄',l:'index.blade',v:'liste + delete'},{i:'📝',l:'create.blade',v:'formulaire'},{i:'🔒',l:'@csrf',v:'sécurité'}],
+    tip:'Utilisez <code>{{ }}</code> pour afficher des données (HTML échappé automatiquement) et <code>{!! !!}</code> uniquement si vous faites confiance au contenu (HTML brut).',
+    code:`{{-- ══════════════════════════════════════════
+     resources/views/products/index.blade.php
+══════════════════════════════════════════ --}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>📦 Produits</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold">📦 Produits</h1>
+        <a href="{{ route('products.create') }}" class="btn btn-primary">
+            + Nouveau produit
+        </a>
+    </div>
+
+    {{-- Message flash de succès --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <table class="table table-bordered table-hover bg-white shadow-sm rounded">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Prix</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{-- @forelse : affiche un message si la liste est vide --}}
+            @forelse($products as $product)
+            <tr>
+                <td>{{ $product->id }}</td>
+                <td>{{ $product->name }}</td>
+                <td>{{ Str::limit($product->description, 50) }}</td>
+                <td><strong>{{ number_format($product->price, 2) }} €</strong></td>
+                <td>
+                    {{-- Formulaire DELETE : HTML ne supporte pas DELETE nativement --}}
+                    <form action="{{ route('products.destroy', $product) }}"
+                          method="POST"
+                          onsubmit="return confirm('Supprimer ce produit ?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            🗑 Supprimer
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                    Aucun produit pour l'instant.
+                    <a href="{{ route('products.create') }}">Créer le premier ?</a>
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    {{-- Liens de pagination automatiques --}}
+    {{ $products->links() }}
+
+</div>
+</body>
+</html>
+
+{{-- ══════════════════════════════════════════
+     resources/views/products/create.blade.php
+══════════════════════════════════════════ --}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouveau produit</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container py-5" style="max-width:600px">
+
+    <h2 class="fw-bold mb-4">➕ Nouveau produit</h2>
+
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        {{-- @csrf génère un token caché pour sécuriser le formulaire --}}
+        <form action="{{ route('products.store') }}" method="POST">
+            @csrf
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Nom *</label>
+                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
+                       value="{{ old('name') }}" required>
+                @error('name')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Prix (€) *</label>
+                <input type="number" name="price" step="0.01" min="0"
+                       class="form-control @error('price') is-invalid @enderror"
+                       value="{{ old('price') }}" required>
+                @error('price')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">✅ Enregistrer</button>
+                <a href="{{ route('products.index') }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+      </div>
+    </div>
+</div>
+</body>
+</html>`,
+  },
+  {
+    id:6, icon:'✏️', label:'Étape 6', title:'Édition & Mise à Jour',
+    desc:'Implémenter edit() et update() pour modifier des produits existants',
+    accent:'var(--b)', grad:'linear-gradient(135deg,#3b82f6,#22d3ee)',
+    tag:'app/Http/Controllers', filename:'app/Http/Controllers/ProductController.php', lang:'PHP',
+    context:`Le CRUD ne serait pas complet sans la possibilité de <strong>modifier</strong> un produit. Cela nécessite deux actions : <code>edit()</code> pour afficher le formulaire pré-rempli, et <code>update()</code> pour valider et sauvegarder les changements.`,
+    command:null,
+    objectives:[
+      {text:'Ajouter la méthode <code>edit(Product $product)</code> au contrôleur'},
+      {text:'Créer la vue <code>edit.blade.php</code> (similaire à create)'},
+      {text:'Ajouter la méthode <code>update(Request $request, Product $product)</code>'},
+      {text:'Utiliser <code>@method(\'PUT\')</code> dans le formulaire HTML'},
+      {text:'Lier le bouton "Éditer" dans la liste (index.blade.php)'},
+    ],
+    hints:[
+      {title:'💡 Pourquoi PUT ?', body:'Pour la modification, on utilise conventionnellement <code>PUT</code> ou <code>PATCH</code>. Comme pour DELETE, les formulaires HTML ne supportent pas ces verbes nativement. Blade fournit <code>@method(\'PUT\')</code> pour contourner cela.'},
+      {title:'💡 Pré-remplir les champs', body:'Dans le formulaire d\'édition, utilisez l\'attribut <code>value="{{ $product->name }}"</code> pour afficher la valeur actuelle. Pour la validation échouée, utilisez <code>value="{{ old(\'name\', $product->name) }}"</code>.'},
+      {title:'💡 $product->update()', body:'Comme pour <code>create()</code>, vous pouvez passer les données validées directement : <code>$product->update($validated)</code>.'},
+    ],
+    corrBanner:'L\'édition est très proche de la création, avec deux différences : on charge un modèle existant et on utilise le verbe <strong>PUT</strong>.',
+    info:[{i:'📝',l:'edit()',v:'Vue Edit'},{i:'🔄',l:'update()',v:'PUT / Sauvegarde'},{i:'💉',l:'Binding',v:'Injecté auto'}],
+    tip:'N\'oubliez pas d\'ajouter le lien <code>{{ route(\'products.edit\', $product) }}</code> dans votre tableau <code>index.blade.php</code> pour que l\'utilisateur puisse accéder au formulaire !',
+    code:`// --- Dans ProductController.php ---
+
+/**
+ * GET /products/{product}/edit — Formulaire d'édition
+ */
+public function edit(Product $product)
+{
+    return view('products.edit', compact('product'));
+}
+
+/**
+ * PUT /products/{product} — Mettre à jour le produit
+ */
+public function update(Request $request, Product $product)
+{
+    $validated = $request->validate([
+        'name'        => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'price'       => 'required|numeric|min:0',
+    ]);
+
+    $product->update($validated);
+
+    return redirect()
+        ->route('products.index')
+        ->with('success', '🔄 Produit mis à jour !');
+}
+
+{{-- --- Dans resources/views/products/edit.blade.php --- --}}
+<form action="{{ route('products.update', $product) }}" method="POST">
+    @csrf
+    @method('PUT') {{-- Indispensable pour l'update --}}
+
+    <input type="text" name="name" value="{{ old('name', $product->name) }}">
+    {{-- ... autres champs ... --}}
+
+    <button type="submit">Sauvegarder les modifications</button>
+</form>`,
+  },
+
+  /* ── ÉTAPE 7 ── */
+  {
+    id:7, icon:'🔍', label:'Étape 7', title:'Recherche & Filtrage',
+    desc:'Ajouter une barre de recherche pour filtrer les produits par nom',
+    accent:'var(--g)', grad:'linear-gradient(135deg,#10b981,#059669)',
+    tag:'Eloquent Queries', filename:'app/Http/Controllers/ProductController.php', lang:'PHP',
+    context:`Quand la liste devient longue, il est crucial de pouvoir <strong>filtrer</strong>. Nous allons modifier la méthode <code>index()</code> pour qu'elle puisse filtrer les résultats si un paramètre <code>search</code> est présent dans l'URL.`,
+    command:null,
+    objectives:[
+      {text:'Récupérer le terme de recherche via <code>$request->query(\'search\')</code>'},
+      {text:'Utiliser la méthode <code>when()</code> d\'Eloquent pour un filtre conditionnel'},
+      {text:'Ajouter une clause <code>where(\'name\', \'like\', ...)</code>'},
+      {text:'Garder le terme de recherche dans la pagination avec <code>appends()</code>'},
+      {text:'Ajouter le formulaire de recherche dans <code>index.blade.php</code>'},
+    ],
+    hints:[
+      {title:'💡 La méthode when()', body:'<code>when($valeur, callback)</code> exécute le callback uniquement si <code>$valeur</code> est vraie. C\'est parfait pour les filtres optionnels :<br><code>Product::query()->when($search, function($q) use ($search) { ... })</code>'},
+      {title:'💡 Opérateur LIKE', body:'Pour chercher une partie du nom, utilisez <code>%</code> :<br><code>->where(\'name\', \'LIKE\', "%{$search}%")</code>'},
+      {title:'💡 Pagination persistante', body:'Si vous changez de page, le filtre disparaîtrait. Utilisez <code>{{ $products->appends([\'search\' => request(\'search\')])->links() }}</code> dans Blade pour conserver le paramètre.'},
+    ],
+    corrBanner:'Une recherche simple mais efficace utilisant les scopes fluides d\'Eloquent.',
+    info:[{i:'🔍',l:'Filtre',v:'LIKE %search%'},{i:'⛓️',l:'Fluid',v:'method when()'},{i:'📄',l:'Pagination',v:'appends()'}],
+    tip:'Vous pouvez étendre cela facilement pour filtrer par prix (min/max) ou par catégorie en ajoutant d\'autres blocs <code>when()</code>.',
+    code:`// --- Dans ProductController.php ---
+
+public function index(Request $request)
+{
+    $search = $request->query('search');
+
+    $products = Product::query()
+        ->when($search, function ($query, $search) {
+            return $query->where('name', 'like', "%\${search}%");
+        })
+        ->latest()
+        ->paginate(10);
+
+    return view('products.index', compact('products', 'search'));
+}
+
+{{-- --- Dans resources/views/products/index.blade.php --- --}}
+<form action="{{ route('products.index') }}" method="GET" class="mb-4 d-flex gap-2">
+    <input type="text" name="search" value="{{ \$search }}"
+           placeholder="Rechercher un produit..." class="form-control">
+    <button type="submit" class="btn btn-secondary">Filtrer</button>
+</form>
+
+{{-- Liens de pagination (avec persistance du filtre) --}}
+{{ \$products->appends(['search' => \$search])->links() }}`,
+  },
+];
+
+// Mini TP for a 10-15 min presentation: focus on core CRUD flow.
+const TP = TP_ALL.slice(0, 3);
+
+/* ══════════════════════════════════════════════
+   TP STATE
+══════════════════════════════════════════════ */
+let tpStep=0;
+// corrRevealed[i] = true means correction has been revealed for step i
+let corrRevealed=new Array(TP.length).fill(false);
+// objDone[i] = Set of done objective indices
+let objDone=TP.map(()=>new Set());
+
+function updateTPNav(){
+  document.getElementById('nav-info').innerHTML=
+    'Étape <b>'+(tpStep+1)+'</b> / <b>'+TP.length+'</b>';
+}
+
+/* ── BUILD RAIL ── */
+function buildTPRail(){
+  const rail=document.getElementById('tp-rail');
+  rail.querySelectorAll('.tp-dot, .tp-conn').forEach(el => el.remove());
+  TP.forEach((s,i)=>{
+    const dot=document.createElement('div');
+    dot.className='tp-dot';dot.id='tpdot-'+i;
+    dot.textContent=i+1;dot.title=s.title;
+    dot.onclick=()=>goTP(i);
+    rail.appendChild(dot);
+    if(i<TP.length-1){const c=document.createElement('div');c.className='tp-conn';rail.appendChild(c);}
+  });
+  rail.appendChild(document.getElementById('tp-prog'));
+}
+
+/* ── BUILD CARDS ── */
+function buildTPCards(){
+  const stage = document.getElementById('tp-stage');
+  stage.innerHTML = '';
+  TP.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'tp-card';
+    card.id = 'tpcard-' + i;
+    card.innerHTML = tpCardHTML(s, i);
+    stage.appendChild(card);
+  });
+}
+
+function toggleObj(stepIdx, objIdx){
+  const stepSet = objDone[stepIdx];
+  if(!stepSet) return;
+
+  if(stepSet.has(objIdx)) stepSet.delete(objIdx);
+  else stepSet.add(objIdx);
+
+  const done = stepSet.has(objIdx);
+  const item = document.getElementById('obj-' + stepIdx + '-' + objIdx);
+  const check = document.getElementById('objck-' + stepIdx + '-' + objIdx);
+
+  if(item) item.classList.toggle('done', done);
+  if(check) check.textContent = done ? '✓' : '';
+}
+
+function toggleHint(stepIdx, hintIdx){
+  const step = TP[stepIdx];
+  if(!step || !Array.isArray(step.hints)) return;
+
+  const targetHead = document.getElementById('hhead-' + stepIdx + '-' + hintIdx);
+  const targetBody = document.getElementById('hbody-' + stepIdx + '-' + hintIdx);
+  const openTarget = targetBody && !targetBody.classList.contains('open');
+
+  step.hints.forEach((_, hi) => {
+    const head = document.getElementById('hhead-' + stepIdx + '-' + hi);
+    const body = document.getElementById('hbody-' + stepIdx + '-' + hi);
+    if(head) head.classList.remove('open');
+    if(body) body.classList.remove('open');
+  });
+
+  if(openTarget){
+    if(targetHead) targetHead.classList.add('open');
+    if(targetBody) targetBody.classList.add('open');
+  }
+}
+
+function tpCardHTML(s, i) {
+  const cmdHTML = s.command
+    ? `<div class="tp-cmd">
+         <span class="dollar">$</span>
+         <span>${s.command}</span>
+         <button class="tp-copy" onclick="tpCopy(this,'${s.command}')">Copier</button>
+       </div>`
+    : '';
+
+  const objsHTML = s.objectives.map((o, oi) => 
+    `<li class="obj-item" onclick="toggleObj(${i},${oi})" id="obj-${i}-${oi}">
+       <div class="obj-check" id="objck-${i}-${oi}"></div>
+       <div class="obj-text">${o.text}</div>
+     </li>`
+  ).join('');
+
+  const hintsHTML = s.hints.map((h, hi) => 
+    `<div class="hint-wrap">
+       <div class="hint-head" onclick="toggleHint(${i},${hi})" id="hhead-${i}-${hi}">
+         <span>${h.title}</span>
+         <span class="hint-arrow">▶</span>
+       </div>
+       <div class="hint-body" id="hbody-${i}-${hi}">${h.body}</div>
+     </div>`
+  ).join('');
+
+  const infoHTML = s.info.map(it => 
+    `<div class="tp-ii">
+       <div class="tp-ii-i">${it.i}</div>
+       <div class="tp-ii-l">${it.l}</div>
+       <div class="tp-ii-v">${it.v}</div>
+     </div>`
+  ).join('');
+
+  return `
+    <div class="tp-ch">
+      <div class="tp-badge" style="background:${s.grad}">${s.icon}</div>
+      <div class="tp-ch-text">
+        <div class="tp-step-lbl" style="color:${s.accent}">${s.label}</div>
+        <div class="tp-step-title">${s.title}</div>
+        <div class="tp-step-desc">${s.desc}</div>
+        <span class="tp-tag">${s.tag}</span>
+      </div>
+      <span class="phase-badge ${corrRevealed[i] ? 'phase-corr' : 'phase-enonce'}" id="pbadge-${i}">
+        ${corrRevealed[i] ? '✅ Correction' : '✏️ Énoncé'}
+      </span>
+    </div>
+
+    <div class="tp-enonce" id="enonce-${i}">
+      <div class="ctx-box"><span>📖</span><span>${s.context}</span></div>
+      ${cmdHTML}
+      <div class="obj-title">🎯 Objectifs</div>
+      <ul class="obj-list">${objsHTML}</ul>
+      <div class="obj-title" style="color:var(--v);margin-top:15px">🔍 Indices</div>
+      ${hintsHTML}
+      
+      <button class="reveal-btn" id="revbtn-${i}" onclick="revealCorr(${i})" style="display:${corrRevealed[i] ? 'none' : 'flex'}">
+        ✅ Voir la correction complète
+      </button>
+    </div>
+
+    <div class="tp-corr" id="corr-${i}" style="display:${corrRevealed[i] ? 'flex' : 'none'}">
+      <div class="corr-banner">
+        <span class="corr-banner-ico">✅</span>
+        <div class="corr-banner-txt">${s.corrBanner}</div>
+      </div>
+      <div class="tp-igrid">${infoHTML}</div>
+      <div class="code-wrap">
+        <div class="code-bar">
+          <div class="cdots"><span></span><span></span><span></span></div>
+          <span class="cfilename">${s.filename}</span>
+          <span class="clang">${s.lang}</span>
+        </div>
+        <div class="cscroll">
+          <pre><code class="language-php" id="tpc-${i}">${corrRevealed[i] ? s.code : ''}</code></pre>
+        </div>
+      </div>
+      <div class="tp-tip"><span>💡</span><span>${s.tip}</span></div>
+    </div>
+
+    <div class="tp-cf">
+      <span class="tp-counter">Étape <b>${i + 1}</b> / ${TP.length}</span>
+      <div class="tp-btns">
+        <button class="tp-btn tp-ghost" onclick="goTP(${i - 1})" ${i === 0 ? 'disabled' : ''}>← Précédente</button>
+        <button class="tp-btn tp-primary" onclick="goTP(${i + 1})" ${i === TP.length - 1 ? 'style="display:none"' : ''}>Suivante →</button>
+        ${i === TP.length - 1 ? `<button class="tp-btn tp-success" onclick="finishTP()">🏆 Terminer</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function goTP(idx){
+  if(idx < 0 || idx >= TP.length) return;
+  tpStep = idx;
+
+  // Actualiser les classes des cartes
+  TP.forEach((_, i) => {
+    const card = document.getElementById('tpcard-' + i);
+    if (!card) return;
+    card.className = 'tp-card';
+    if(i === idx) card.classList.add('active');
+    else if(i < idx) card.classList.add('prev');
+    else card.classList.add('ghost');
+  });
+
+  // Rail
+  TP.forEach((_, i) => {
+    const dot = document.getElementById('tpdot-' + i);
+    if(!dot) return;
+    dot.className = 'tp-dot';
+    if(i < idx) dot.classList.add('done');
+    else if(i === idx) dot.classList.add('active');
+  });
+
+  const pct = (idx / (TP.length - 1)) * 100;
+  document.getElementById('tp-prog').style.width = pct + '%';
+  
+  updateTPNav();
+  document.getElementById('tp-panel').scrollTo({top: 0, behavior: 'smooth'});
+  spawnP(TP[idx].accent.startsWith('var') ? '#7c5cfc' : TP[idx].accent);
+}
+
+function revealCorr(i){
+  corrRevealed[i] = true;
+  const pbadge = document.getElementById('pbadge-' + i);
+  const revbtn = document.getElementById('revbtn-' + i);
+  const corr = document.getElementById('corr-' + i);
+  const codeEl = document.getElementById('tpc-' + i);
+
+  if(pbadge) { pbadge.className = 'phase-badge phase-corr'; pbadge.textContent = '✅ Correction'; }
+  if(revbtn) revbtn.style.display = 'none';
+  if(corr) corr.style.display = 'flex';
+  
+  if(codeEl) {
+    codeEl.textContent = TP[i].code;
+    if (window.Prism && typeof Prism.highlightElement === 'function') {
+      Prism.highlightElement(codeEl);
+    }
+  }
+  
+  spawnP('#10b981');
+}
+
+/* ── COPY ── */
+function tpCopy(btn,text){
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓ copié';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='Copier';btn.classList.remove('ok');},2000);
+  });
+}
+
+/* ── FINISH ── */
+function finishTP(){
+  const stage=document.getElementById('tp-stage');
+  stage.style.cssText='opacity:0;transform:scale(.95);transition:all .4s ease;';
+  const done=document.getElementById('tp-done');
+  document.getElementById('ach-list').innerHTML=
+    TP.map(s=>`<span class="ach">${s.icon} ${s.title}</span>`).join('');
+  setTimeout(()=>{
+    done.style.display='block';
+    requestAnimationFrame(()=>done.classList.add('show'));
+    for(let i=0;i<60;i++)spawnConfetti();
+  },350);
+  TP.forEach((_,i)=>{const d=document.getElementById('tpdot-'+i);if(d)d.className='tp-dot done';});
+  document.getElementById('tp-prog').style.width='100%';
+}
+
+function restartTP(){
+  tpStep=0;
+  corrRevealed=new Array(TP.length).fill(false);
+  objDone=TP.map(()=>new Set());
+  document.getElementById('tp-done').classList.remove('show');
+  setTimeout(()=>{
+    document.getElementById('tp-done').style.display='none';
+    const s=document.getElementById('tp-stage');s.style.cssText='';
+    // rebuild cards fresh
+    s.innerHTML='';
+    buildTPCards();
+    buildTPRailDots();
+    goTP(0);
+  },500);
+}
+
+function buildTPRailDots(){
+  // dots already exist, just reset classes
+  TP.forEach((_,i)=>{
+    const d=document.getElementById('tpdot-'+i);
+    if(d){d.className='tp-dot';}
+  });
+}
+
+function ensureTPBuilt(){
+  const hasCards = !!document.querySelector('#tp-stage .tp-card');
+  const hasDots = !!document.getElementById('tpdot-0');
+  if(hasCards && hasDots) return;
+
+  buildTPRail();
+  buildTPCards();
+  goTP(0);
+}
+
+/* ══════════════════════════════════════════════
+   PARTICLES
+══════════════════════════════════════════════ */
+function spawnP(color){
+  const c=(typeof color==='string'&&color.startsWith('var('))?'#7c5cfc':color;
+  for(let i=0;i<7;i++){
+    const p=document.createElement('div');p.className='particle';
+    const sz=Math.random()*5+3;
+    p.style.cssText=`width:${sz}px;height:${sz}px;background:${c};left:${Math.random()*100}vw;top:${55+Math.random()*25}vh;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.4}s;box-shadow:0 0 5px ${c};`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),4000);
+  }
+}
+function spawnConfetti(){
+  const cols=['#7c5cfc','#22d3ee','#3b82f6','#e040fb','#f59e0b','#10b981','#fff'];
+  const p=document.createElement('div');const sz=Math.random()*7+3;
+  p.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:${sz}px;height:${sz}px;background:${cols[~~(Math.random()*cols.length)]};left:${Math.random()*100}vw;top:${Math.random()*100}vh;border-radius:${Math.random()>.5?'50%':'2px'};animation:cffall ${1+Math.random()*2}s ease-out forwards;`;
+  const style=document.createElement('style');
+  style.textContent=`@keyframes cffall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(200px) rotate(${Math.random()*720}deg);opacity:0}}`;
+  document.head.appendChild(style);document.body.appendChild(p);
+  setTimeout(()=>{p.remove();style.remove();},3000);
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  // Présentation
+  buildDots();
+  document.getElementById('ap').disabled=true;
+  if (window.Prism && typeof Prism.highlightAll === 'function') {
+    Prism.highlightAll();
+  }
+
+  // TP
+  ensureTPBuilt(); // activate first card immediately
+  // pre-show hero & rail (panel may already be visible if user navigated)
+  document.getElementById('tp-hero').classList.add('show');
+  document.getElementById('tp-rail').classList.add('show');
+
+  setTimeout(()=>spawnP('#7c5cfc'),500);
+});
+</script>
+</body>
+</html>

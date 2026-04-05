@@ -1,0 +1,5 @@
+﻿User-agent: *
+Allow: /
+
+Sitemap: https://Ranim-Neji.github.io/sitemap.xml
+
