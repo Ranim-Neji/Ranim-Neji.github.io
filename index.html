@@ -52,8 +52,8 @@
     background: var(--bg);
     color: var(--txt);
     overflow: hidden;
-    height: 100vh; width: 100vw;
-    min-height: 100dvh;
+    height: 100dvh; width: 100vw;
+    min-height: 100vh;
   }
 
   /* ─── STARFIELD ─────────────────────────────── */
@@ -67,7 +67,7 @@
   .b3 { width:400px;height:400px;background:var(--c);top:35%;left:55%; }
 
   /* ─── ROOT ───────────────────────────────────── */
-  #root { position:relative;z-index:1;width:100vw;height:100vh;min-height:100dvh;display:flex;flex-direction:column; }
+  #root { position:relative;z-index:1;width:100vw;height:100dvh;min-height:100vh;display:flex;flex-direction:column; }
 
   /* ─── TOP NAV ────────────────────────────────── */
   #topnav {
@@ -151,6 +151,33 @@
   .abtn:disabled:hover { background:var(--sur2);border-color:var(--bdr);box-shadow:none; }
   .keyhint { font-family:var(--fc);font-size:11px;color:var(--muted);display:flex;gap:8px; }
   .key { padding:2px 7px;border-radius:5px;border:1px solid var(--bdr);color:var(--muted); }
+
+  /* Mobile presentation nav */
+  .mnav {
+    position:fixed;
+    left:12px; right:12px; bottom:12px;
+    z-index:120;
+    display:none;
+    align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 10px;
+    border:1px solid var(--bdr);
+    border-radius:14px;
+    background:rgba(6,9,18,.82);
+    backdrop-filter:blur(16px);
+    box-shadow:0 10px 28px rgba(0,0,0,.35);
+  }
+  .mnav-mid {
+    min-width:86px;text-align:center;
+    font-family:var(--fc);font-size:11px;color:var(--muted);
+  }
+  .mnav-mid b { color:var(--v); }
+  .mnav-btn {
+    width:44px;height:44px;border-radius:12px;
+    background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);
+    font-size:19px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mnav-btn:disabled { opacity:.35;cursor:default; }
 
   /* ─── SLIDE PRIMITIVES ───────────────────────── */
   .s-cover { flex-direction:column;text-align:center;max-width:900px;margin:auto; }
@@ -589,11 +616,8 @@
     .mvc-rl { width:46px; font-size:9px; letter-spacing:1px; }
     .mvc-box { font-size:12px; padding:10px 12px; }
 
-    #pres-ctrl {
-      height:58px;
-      padding:0 12px;
-      gap:8px;
-    }
+    #pres-ctrl { display:none; }
+    .mnav { display:flex; }
     .keyhint { display:none; }
     .abtn { width:36px; height:36px; border-radius:10px; }
     .pdots { gap:6px; max-width:56vw; overflow-x:auto; }
@@ -630,6 +654,9 @@
 
   @media (max-width: 420px) {
     .slide { padding-left:12px; padding-right:12px; }
+    .mnav { left:8px; right:8px; bottom:8px; padding:7px 8px; }
+    .mnav-btn { width:40px; height:40px; border-radius:10px; }
+    .mnav-mid { font-size:10px; }
     .tp-btns { flex-direction:column; }
     .tp-btn { width:100%; }
     .tp-dot { width:34px; height:34px; font-size:11px; }
@@ -849,6 +876,12 @@ Product::create($request->validated());</code></pre></div>
     </div>
   </div><!-- /pres-panel -->
 
+  <div class="mnav" id="mnav">
+    <button class="mnav-btn" id="mnav-prev" onclick="goSlide(curSlide-1)" aria-label="Slide précédente">←</button>
+    <div class="mnav-mid" id="mnav-count">Slide <b>1</b> / <b>7</b></div>
+    <button class="mnav-btn" id="mnav-next" onclick="goSlide(curSlide+1)" aria-label="Slide suivante">→</button>
+  </div>
+
 
   <!-- ════════════ TP GUIDÉ ════════════ -->
   <div class="panel hidden" id="tp-panel">
@@ -903,6 +936,12 @@ Product::create($request->validated());</code></pre></div>
    PANEL SWITCH
 ══════════════════════════════════════════════ */
 let active='pres';
+function updateMobileNavVisibility(){
+  const m = document.getElementById('mnav');
+  if(!m) return;
+  const isMobile = window.matchMedia('(max-width: 680px)').matches;
+  m.style.display = (active === 'pres' && isMobile) ? 'flex' : 'none';
+}
 function switchPanel(name){
   if(active===name)return;
   active=name;
@@ -910,6 +949,7 @@ function switchPanel(name){
   document.getElementById('tp-panel').className  ='panel '+(name==='tp'  ?'visible':'hidden');
   document.getElementById('tab-pres').className  ='nav-tab'+(name==='pres'?' active':'');
   document.getElementById('tab-tp').className    ='nav-tab'+(name==='tp'  ?' active':'');
+  updateMobileNavVisibility();
   if(name==='tp'){
     ensureTPBuilt();
     updateTPNav();
@@ -948,6 +988,15 @@ function goSlide(idx){
 }
 function updatePresNav(){
   document.getElementById('nav-info').innerHTML='Slide <b>'+(curSlide+1)+'</b> / <b>'+TOTAL+'</b>';
+  updateMobilePresNav();
+}
+function updateMobilePresNav(){
+  const c=document.getElementById('mnav-count');
+  const p=document.getElementById('mnav-prev');
+  const n=document.getElementById('mnav-next');
+  if(c) c.innerHTML='Slide <b>'+(curSlide+1)+'</b> / <b>'+TOTAL+'</b>';
+  if(p) p.disabled=curSlide===0;
+  if(n) n.disabled=curSlide===TOTAL-1;
 }
 window.addEventListener('keydown',e=>{
   if(active!=='pres')return;
@@ -1792,6 +1841,27 @@ window.addEventListener('DOMContentLoaded',()=>{
   // pre-show hero & rail (panel may already be visible if user navigated)
   document.getElementById('tp-hero').classList.add('show');
   document.getElementById('tp-rail').classList.add('show');
+  updateMobileNavVisibility();
+  updateMobilePresNav();
+  window.addEventListener('resize', updateMobileNavVisibility);
+
+  // Swipe horizontal sur mobile pour naviguer dans la présentation
+  const svp = document.getElementById('slides-vp');
+  let sx = 0, sy = 0;
+  svp.addEventListener('touchstart', (e) => {
+    if(active !== 'pres' || !e.changedTouches?.length) return;
+    sx = e.changedTouches[0].clientX;
+    sy = e.changedTouches[0].clientY;
+  }, { passive: true });
+  svp.addEventListener('touchend', (e) => {
+    if(active !== 'pres' || !e.changedTouches?.length) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2){
+      if(dx < 0) goSlide(curSlide + 1);
+      else goSlide(curSlide - 1);
+    }
+  }, { passive: true });
 
   setTimeout(()=>spawnP('#7c5cfc'),500);
 });
